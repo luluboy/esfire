@@ -1,0 +1,120 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Esfire: JS code generator with trace injection demo: JS → AST → JS</title><script src='escodegen.browser.js'></script>
+  <link rel="stylesheet" href="style.css" type="text/css" />
+  <script src='js/esprima.js'></script>
+  <script src='js/escodegen.browser.js'></script>
+  <script src='js/esmorph.js'></script>
+  <!--script src='../js/jsdebug.js'></script-->
+  <script type="text/javascript">
+      
+      
+ function tracer(source) {
+    var modifiers, morphed;
+
+    modifiers = [];
+    modifiers.push(esmorph.Tracer.FunctionEntrance('Enter'));
+    modifiers.push(esmorph.Tracer.FunctionExit('Exit'));
+
+    morphed = esmorph.modify(source, modifiers);
+    return morphed;t    
+}
+      
+      
+function $D(elm) {
+  var range = document.createRange();
+  range.selectNodeContents(elm);
+  range.deleteContents();
+  range.detach();
+}
+function $T(mes) {
+  return document.createTextNode(mes);
+}
+function hasClass (e, name){
+  name = name.toLowerCase();
+  var cn = e.className;
+  if (!cn) return false;
+  var cnlist = cn.toLowerCase().split(/\s+/);
+  for (var i=0,l=cnlist.length;i<l;i++)
+    if(cnlist[i] == name) return true;
+  return false;
+}
+function addClass (e, name){
+  var cn = e.className || '';
+  if(hasClass(e, name)) return;
+  e.className = cn+' '+name;
+}
+function removeClass(e, name){
+  if(!hasClass(e, name)) return;
+  var cn = e.className || '';
+  name = name.toLowerCase();
+  var cnlist = cn.toLowerCase().split(/\s+/);
+  cnlist.splice(cnlist.indexOf(name), 1);
+  e.className = cnlist.join(' ');
+}
+function toggleClass(e, name){
+  (hasClass(e, name))? removeClass(e, name) : addClass(e, name);
+}
+document.addEventListener('DOMContentLoaded', function(ev) {
+  var textarea = document.getElementById("console");
+  var pre = document.getElementById("output");
+ // textarea.value = "for(var i=1;i<=100;++i){if(i%15===0){console.log('FizzBuzz')}else if(i%3===0){console.log('Fizz')}else if(i%5===0){console.log('Buzz')}else{console.log(i)}}";
+    
+        
+       // (function() { 
+       src="\n\
+( function() {\n\
+  var foo = {\n\
+    bar    : function(sugoi) {}\n\
+  };\n\
+function bar() {\n\
+}\n\
+toto.prototype.tata=function() {\n\
+};\n\
+window.bar=function() {\n\
+};\n\
+})()";
+        
+        //!TODO Remove scope .. have no clue how to do this with esprima
+  /*    src=src.replace(/\(function[^\{]+\{/gm, ''); 
+      src=src.replace(/\}\)\([^\)]*\);/gm,'');*/
+      
+      textarea.value=src;
+      
+        
+    //esprima options
+    var options={
+        // loc:true, 	//Nodes have line and column-based location info
+        // range:true, 	//Nodes have an index-based location range (array)
+         raw:true,    	//Literals have extra property which stores the verbatim source
+         //tokens:true, 	//An extra array containing all found tokens
+         comment:false, 	//An extra array containing all line and block comments
+         tolerant:true 	//An extra array containing all errors found, attempts to continue parsing when an error is encountered
+     };
+   function show() {
+    $D(pre);
+    try {
+      removeClass(textarea, "invalid");
+      var AST = esprima.parse(textarea.value,options);
+      pre.appendChild($T(tracer(escodegen.generate(AST))));
+    } catch (e) {
+      addClass(textarea, "invalid")
+      pre.appendChild($T("Invalid:"+e));
+    }
+  }
+  show();
+  textarea.addEventListener("input", show, false);
+}, false);
+  </script>
+</head>
+<body>
+<h1>JS code generator demo: JS → AST → JS</h1>
+<p>using <a href="http://esprima.org/">esprima</a> as parser</p>
+<p>using <a href="https://github.com/ariya/esmorph">esmorph</a> as instrument tool</p>
+<p>and using <a href="https://github.com/Constellation/escodegen">escodegen</a> as code generator</p>
+<textarea id="console" rows="10" cols="30" placeholder="write your code"></textarea>
+<pre id="output"></pre>
+</body>
+</html>
